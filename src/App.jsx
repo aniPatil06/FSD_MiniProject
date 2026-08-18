@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createChart, ColorType, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
-import { Search, ArrowUpRight, ArrowDownRight, Wallet, Activity, BarChart2, Sliders } from 'lucide-react';
+import { Search, ArrowUpRight, ArrowDownRight, Wallet, BarChart2, Sliders } from 'lucide-react';
 
 // Stock initial data generator
 const INITIAL_STOCKS = [
@@ -10,7 +10,6 @@ const INITIAL_STOCKS = [
   { symbol: 'AMZN', name: 'Amazon.com', price: 178.20, change: -0.45, high: 180.50, low: 177.00, volume: '19.4M' },
 ];
 
-// Helper to generate mock historical candlestick data
 function generateHistoricalCandles(basePrice) {
   const data = [];
   const volumeData = [];
@@ -19,7 +18,7 @@ function generateHistoricalCandles(basePrice) {
   const now = Math.floor(Date.now() / 1000);
 
   for (let i = 60; i >= 0; i--) {
-    const time = (now - i * 60) ;
+    const time = now - i * 60;
     const open = currentPrice + (Math.random() - 0.5) * 1.5;
     const high = Math.max(open, open + Math.random() * 2);
     const low = Math.min(open, open - Math.random() * 2);
@@ -34,7 +33,6 @@ function generateHistoricalCandles(basePrice) {
     });
   }
 
-  // Calculate Simple Moving Average (20-period)
   for (let i = 0; i < data.length; i++) {
     if (i < 20) continue;
     const slice = data.slice(i - 20, i);
@@ -45,43 +43,28 @@ function generateHistoricalCandles(basePrice) {
   return { candles: data, volumes: volumeData, sma: smaData };
 }
 
-// TradingView Lightweight Candlestick Component
 function TradingViewChart({ activeStock, showSMA }) {
   const chartContainerRef = useRef(null);
-  const chartRef = useRef(null);
-  const candlestickSeriesRef = useRef(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    // Create TradingView Chart Instance
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#0e1626' },
+        background: { type: ColorType.Solid, color: '#0f172a' },
         textColor: '#64748b',
-        fontFamily: 'Plus Jakarta Sans, sans-serif',
+        fontFamily: 'sans-serif',
       },
       grid: {
         vertLines: { color: '#1e293b' },
         horzLines: { color: '#1e293b' },
       },
-      crosshair: {
-        mode: 1,
-      },
-      rightPriceScale: {
-        borderColor: '#1e293b',
-      },
-      timeScale: {
-        borderColor: '#1e293b',
-        timeVisible: true,
-        secondsVisible: false,
-      },
+      crosshair: { mode: 1 },
+      rightPriceScale: { borderColor: '#1e293b' },
+      timeScale: { borderColor: '#1e293b', timeVisible: true, secondsVisible: false },
       autoSize: true,
     });
 
-    chartRef.current = chart;
-
-    // Add Candlestick Series
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#10b981',
       downColor: '#f43f5e',
@@ -89,9 +72,7 @@ function TradingViewChart({ activeStock, showSMA }) {
       wickUpColor: '#10b981',
       wickDownColor: '#f43f5e',
     });
-    candlestickSeriesRef.current = candleSeries;
 
-    // Add Volume Series
     const volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: { type: 'volume' },
       priceScaleId: '',
@@ -100,22 +81,18 @@ function TradingViewChart({ activeStock, showSMA }) {
       scaleMargins: { top: 0.8, bottom: 0 },
     });
 
-    // Populate Initial Data
     const { candles, volumes, sma } = generateHistoricalCandles(activeStock.price);
     candleSeries.setData(candles);
     volumeSeries.setData(volumes);
 
-    // Optional SMA Line Series
-    let smaSeries = null;
     if (showSMA) {
-      smaSeries = chart.addSeries(LineSeries, {
+      const smaSeries = chart.addSeries(LineSeries, {
         color: '#6366f1',
         lineWidth: 2,
       });
       smaSeries.setData(sma);
     }
 
-    // Live Ticks Simulation
     const interval = setInterval(() => {
       const lastCandle = candles[candles.length - 1];
       const delta = (Math.random() - 0.48) * 1.2;
@@ -136,11 +113,11 @@ function TradingViewChart({ activeStock, showSMA }) {
     };
   }, [activeStock.symbol, showSMA]);
 
-  return <div ref={chartContainerRef} style={{ width: '100%', height: '100%' }} />;
+  return <div ref={chartContainerRef} className="w-full h-full" />;
 }
 
 export default function App() {
-  const [stocks, setStocks] = useState(INITIAL_STOCKS);
+  const [stocks] = useState(INITIAL_STOCKS);
   const [selectedSymbol, setSelectedSymbol] = useState('NVDA');
   const [timeframe, setTimeframe] = useState('5M');
   const [showSMA, setShowSMA] = useState(true);
@@ -180,43 +157,48 @@ export default function App() {
   };
 
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#080c14', color: '#f1f5f9' }}>
+    <div className="w-screen h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
       
       {/* Top Header */}
-      <header style={{ height: '52px', borderBottom: '1px solid #1e293b', backgroundColor: '#0e1626', padding: '0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ backgroundColor: '#4f46e5', color: '#fff', fontWeight: '800', width: '30px', height: '30px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>PT</div>
-          <h1 style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px', margin: 0, color: '#fff' }}>
-            PulseTrade <span style={{ fontSize: '9px', fontWeight: '700', letterSpacing: '0.5px', backgroundColor: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(99,102,241,0.3)', marginLeft: '6px' }}>PRO TERMINAL</span>
+      <header className="h-14 border-b border-slate-800 bg-slate-900 px-5 flex justify-between items-center shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="bg-indigo-600 text-white font-black w-7 h-7 rounded flex items-center justify-center text-xs">PT</div>
+          <h1 className="text-sm font-bold text-white flex items-center">
+            PulseTrade 
+            <span className="text-[10px] font-semibold bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/30 ml-2">
+              PRO TERMINAL
+            </span>
           </h1>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#131d31', padding: '5px 12px', borderRadius: '6px', border: '1px solid #1e293b' }}>
-          <Wallet size={14} color="#10b981" />
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '10px', color: '#64748b', display: 'block', lineHeight: '1' }}>Available Funds</span>
-            <span className="font-mono-num" style={{ fontSize: '13px', fontWeight: '700', color: '#10b981', lineHeight: '1.2' }}>${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+        <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-1 rounded border border-slate-700">
+          <Wallet size={14} className="text-emerald-400" />
+          <div className="text-right">
+            <span className="text-[10px] text-slate-400 block leading-none">Available Funds</span>
+            <span className="font-mono text-xs font-bold text-emerald-400">
+              ${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
           </div>
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr 300px', overflow: 'hidden' }}>
+      {/* Main Grid Layout */}
+      <div className="flex-1 grid grid-cols-12 overflow-hidden">
         
-        {/* Watchlist Sidebar */}
-        <aside style={{ borderRight: '1px solid #1e293b', backgroundColor: '#0b111e', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ padding: '10px 14px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#0e1626' }}>
-            <Search size={14} color="#64748b" />
+        {/* Watchlist Sidebar (Column 3) */}
+        <aside className="col-span-3 border-r border-slate-800 bg-slate-900/50 flex flex-col">
+          <div className="p-3 border-b border-slate-800 flex items-center gap-2 bg-slate-900">
+            <Search size={14} className="text-slate-400" />
             <input
               type="text"
               placeholder="Search Market..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '100%', backgroundColor: 'transparent', border: 'none', outline: 'none', color: '#f1f5f9', fontSize: '12px' }}
+              className="w-full bg-transparent border-none outline-none text-slate-100 text-xs"
             />
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="flex-1 overflow-y-auto">
             {filteredStocks.map((stock) => {
               const isSelected = activeStock.symbol === stock.symbol;
               const isPositive = stock.change >= 0;
@@ -224,25 +206,18 @@ export default function App() {
                 <div
                   key={stock.symbol}
                   onClick={() => setSelectedSymbol(stock.symbol)}
-                  style={{
-                    padding: '12px 16px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    borderBottom: '1px solid #172033',
-                    backgroundColor: isSelected ? '#131d33' : 'transparent',
-                    borderLeft: isSelected ? '3px solid #6366f1' : '3px solid transparent',
-                  }}
+                  className={`p-3 cursor-pointer flex justify-between items-center border-b border-slate-800/40 border-l-4 transition-all ${
+                    isSelected ? 'bg-indigo-950/40 border-l-indigo-500' : 'border-l-transparent hover:bg-slate-800/30'
+                  }`}
                 >
                   <div>
-                    <span style={{ fontWeight: '700', fontSize: '13px', display: 'block' }}>{stock.symbol}</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>{stock.name}</span>
+                    <span className="font-bold text-xs block">{stock.symbol}</span>
+                    <span className="text-[10px] text-slate-400">{stock.name}</span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <span className="font-mono-num" style={{ fontSize: '13px', fontWeight: '600', display: 'block' }}>${stock.price.toFixed(2)}</span>
-                    <span className="font-mono-num" style={{ fontSize: '11px', fontWeight: '700', color: isPositive ? '#10b981' : '#f43f5e', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '2px' }}>
-                      {isPositive ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                  <div className="text-right">
+                    <span className="font-mono text-xs font-semibold block">${stock.price.toFixed(2)}</span>
+                    <span className={`font-mono text-[10px] font-bold flex items-center justify-end ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {isPositive ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                       {isPositive ? `+${stock.change}%` : `${stock.change}%`}
                     </span>
                   </div>
@@ -252,107 +227,90 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Chart Workspace */}
-        <main style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', backgroundColor: '#080c14' }}>
+        {/* Chart Workspace (Column 6) */}
+        <main className="col-span-6 p-3 flex flex-col gap-3 overflow-y-auto bg-slate-950">
           
           {/* Header Banner */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0e1626', padding: '12px 18px', borderRadius: '8px', border: '1px solid #1e293b' }}>
+          <div className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-800">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: '800', margin: 0 }}>{activeStock.symbol}</h2>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>{activeStock.name}</span>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black m-0">{activeStock.symbol}</h2>
+                <span className="text-xs text-slate-400">{activeStock.name}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }}>
-                <span className="font-mono-num" style={{ fontSize: '24px', fontWeight: '700', color: '#fff' }}>${activeStock.price.toFixed(2)}</span>
-                <span className="font-mono-num" style={{ fontSize: '11px', fontWeight: '700', color: activeStock.change >= 0 ? '#10b981' : '#f43f5e', backgroundColor: activeStock.change >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="font-mono text-xl font-bold text-white">${activeStock.price.toFixed(2)}</span>
+                <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  activeStock.change >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'
+                }`}>
                   {activeStock.change >= 0 ? `+${activeStock.change}%` : `${activeStock.change}%`}
                 </span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', fontSize: '11px', color: '#64748b' }}>
-              <div><span style={{ display: 'block', color: '#475569' }}>24h High</span><span className="font-mono-num" style={{ color: '#f1f5f9', fontWeight: '600' }}>${activeStock.high}</span></div>
-              <div><span style={{ display: 'block', color: '#475569' }}>24h Low</span><span className="font-mono-num" style={{ color: '#f1f5f9', fontWeight: '600' }}>${activeStock.low}</span></div>
-              <div><span style={{ display: 'block', color: '#475569' }}>Volume</span><span className="font-mono-num" style={{ color: '#f1f5f9', fontWeight: '600' }}>{activeStock.volume}</span></div>
+            <div className="flex gap-4 text-[10px] text-slate-400">
+              <div><span className="block text-slate-500">24h High</span><span className="font-mono text-slate-200 font-semibold">${activeStock.high}</span></div>
+              <div><span className="block text-slate-500">24h Low</span><span className="font-mono text-slate-200 font-semibold">${activeStock.low}</span></div>
+              <div><span className="block text-slate-500">Volume</span><span className="font-mono text-slate-200 font-semibold">{activeStock.volume}</span></div>
             </div>
           </div>
 
           {/* Chart Controls Bar */}
-          <div style={{ backgroundColor: '#0e1626', borderRadius: '8px', border: '1px solid #1e293b', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <BarChart2 size={15} color="#6366f1" />
-              <span style={{ fontSize: '12px', fontWeight: '700', color: '#94a3b8', marginRight: '10px' }}>Candlestick Engine</span>
+          <div className="bg-slate-900 rounded-lg border border-slate-800 px-3 py-2 flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <BarChart2 size={14} className="text-indigo-400 mr-1" />
+              <span className="text-xs font-bold text-slate-400 mr-2">Candlestick Engine</span>
               {['1M', '5M', '1H', '1D'].map((tf) => (
                 <button
                   key={tf}
                   onClick={() => setTimeframe(tf)}
-                  style={{
-                    backgroundColor: timeframe === tf ? '#131d31' : 'transparent',
-                    color: timeframe === tf ? '#6366f1' : '#64748b',
-                    border: timeframe === tf ? '1px solid #1e293b' : 'none',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
+                    timeframe === tf ? 'bg-slate-800 text-indigo-400 border border-slate-700' : 'text-slate-400 hover:text-slate-200'
+                  }`}
                 >
                   {tf}
                 </button>
               ))}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <button
-                onClick={() => setShowSMA(!showSMA)}
-                style={{
-                  backgroundColor: showSMA ? 'rgba(99,102,241,0.15)' : 'transparent',
-                  color: showSMA ? '#818cf8' : '#64748b',
-                  border: '1px solid #1e293b',
-                  padding: '3px 10px',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <Sliders size={12} /> SMA (20)
-              </button>
-            </div>
+            <button
+              onClick={() => setShowSMA(!showSMA)}
+              className={`px-2 py-0.5 rounded text-[10px] font-bold border cursor-pointer flex items-center gap-1 ${
+                showSMA ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'text-slate-400 border-slate-800'
+              }`}
+            >
+              <Sliders size={11} /> SMA (20)
+            </button>
           </div>
 
-          {/* Candlestick Canvas Container */}
-          <div style={{ backgroundColor: '#0e1626', borderRadius: '8px', border: '1px solid #1e293b', height: '360px', overflow: 'hidden' }}>
+          {/* Chart Canvas */}
+          <div className="bg-slate-900 rounded-lg border border-slate-800 h-80 overflow-hidden">
             <TradingViewChart activeStock={activeStock} showSMA={showSMA} />
           </div>
 
-          {/* Execution Order Book */}
-          <div style={{ backgroundColor: '#0e1626', borderRadius: '8px', border: '1px solid #1e293b', padding: '14px' }}>
-            <h3 style={{ fontSize: '11px', fontWeight: '700', margin: '0 0 10px 0', color: '#64748b', letterSpacing: '0.3px', textTransform: 'uppercase' }}>Execution Order Book</h3>
+          {/* Order Book */}
+          <div className="bg-slate-900 rounded-lg border border-slate-800 p-3">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Execution Order Book</h3>
             {trades.length === 0 ? (
-              <p style={{ fontSize: '11px', color: '#475569', margin: 0 }}>No trades executed in this session.</p>
+              <p className="text-[11px] text-slate-500 m-0">No trades executed in this session.</p>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+              <table className="w-full text-[11px] border-collapse">
                 <thead>
-                  <tr style={{ color: '#475569', textAlign: 'left', borderBottom: '1px solid #1e293b' }}>
-                    <th style={{ paddingBottom: '6px' }}>Type</th>
-                    <th style={{ paddingBottom: '6px' }}>Asset</th>
-                    <th style={{ paddingBottom: '6px' }}>Qty</th>
-                    <th style={{ paddingBottom: '6px' }}>Executed Price</th>
-                    <th style={{ paddingBottom: '6px', textAlign: 'right' }}>Time</th>
+                  <tr className="text-slate-500 text-left border-b border-slate-800">
+                    <th className="pb-1">Type</th>
+                    <th className="pb-1">Asset</th>
+                    <th className="pb-1">Qty</th>
+                    <th className="pb-1">Executed Price</th>
+                    <th className="pb-1 text-right">Time</th>
                   </tr>
                 </thead>
                 <tbody>
                   {trades.map((t) => (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #172033' }}>
-                      <td style={{ padding: '6px 0', fontWeight: '700', color: t.type === 'BUY' ? '#10b981' : '#f43f5e' }}>{t.type}</td>
-                      <td style={{ padding: '6px 0', fontWeight: '600' }}>{t.symbol}</td>
-                      <td style={{ padding: '6px 0' }}>{t.qty}</td>
-                      <td className="font-mono-num" style={{ padding: '6px 0' }}>${t.price.toFixed(2)}</td>
-                      <td className="font-mono-num" style={{ padding: '6px 0', textAlign: 'right', color: '#64748b' }}>{t.time}</td>
+                    <tr key={t.id} className="border-b border-slate-800/40">
+                      <td className={`py-1 font-bold ${t.type === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>{t.type}</td>
+                      <td className="py-1 font-semibold">{t.symbol}</td>
+                      <td className="py-1">{t.qty}</td>
+                      <td className="font-mono py-1">${t.price.toFixed(2)}</td>
+                      <td className="font-mono py-1 text-right text-slate-400">{t.time}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -361,80 +319,57 @@ export default function App() {
           </div>
         </main>
 
-        {/* Right Order Panel */}
-        <aside style={{ borderLeft: '1px solid #1e293b', backgroundColor: '#0b111e', padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: '700', margin: 0 }}>Order Panel</h3>
+        {/* Right Order Panel (Column 3) */}
+        <aside className="col-span-3 border-l border-slate-800 bg-slate-900/50 p-4 flex flex-col gap-4">
+          <h3 className="text-xs font-bold m-0">Order Panel</h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', backgroundColor: '#131d31', padding: '3px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+          <div className="grid grid-cols-2 gap-1 bg-slate-800 p-1 rounded border border-slate-700">
             <button
               onClick={() => setOrderType('BUY')}
-              style={{
-                backgroundColor: orderType === 'BUY' ? '#10b981' : 'transparent',
-                color: orderType === 'BUY' ? '#fff' : '#64748b',
-                border: 'none',
-                padding: '7px',
-                borderRadius: '4px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className={`py-1.5 rounded text-xs font-bold cursor-pointer transition-colors ${
+                orderType === 'BUY' ? 'bg-emerald-500 text-white' : 'text-slate-400 hover:text-white'
+              }`}
             >
               BUY
             </button>
             <button
               onClick={() => setOrderType('SELL')}
-              style={{
-                backgroundColor: orderType === 'SELL' ? '#f43f5e' : 'transparent',
-                color: orderType === 'SELL' ? '#fff' : '#64748b',
-                border: 'none',
-                padding: '7px',
-                borderRadius: '4px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className={`py-1.5 rounded text-xs font-bold cursor-pointer transition-colors ${
+                orderType === 'SELL' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'
+              }`}
             >
               SELL
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="flex flex-col gap-3">
             <div>
-              <label style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Quantity</label>
+              <label className="text-[10px] text-slate-400 block mb-1">Quantity</label>
               <input
                 type="number"
                 min="1"
                 value={quantity}
                 onChange={(e) => setQuantity(Number(e.target.value))}
-                className="font-mono-num"
-                style={{ width: '100%', backgroundColor: '#080c14', border: '1px solid #1e293b', borderRadius: '6px', padding: '8px 10px', color: '#fff', fontSize: '13px', outline: 'none' }}
+                className="font-mono w-full bg-slate-950 border border-slate-800 rounded p-2 text-white text-xs outline-none focus:border-indigo-500"
               />
             </div>
 
-            <div style={{ backgroundColor: '#131d31', padding: '10px', borderRadius: '6px', border: '1px solid #1e293b', fontSize: '11px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: '#64748b' }}>
+            <div className="bg-slate-800/50 p-2.5 rounded border border-slate-800 text-[11px]">
+              <div className="flex justify-between mb-1 text-slate-400">
                 <span>Market Price</span>
-                <span className="font-mono-num" style={{ color: '#fff' }}>${activeStock.price.toFixed(2)}</span>
+                <span className="font-mono text-white">${activeStock.price.toFixed(2)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '700', color: '#fff' }}>
+              <div className="flex justify-between font-bold text-white">
                 <span>Total Value</span>
-                <span className="font-mono-num">${(activeStock.price * quantity).toFixed(2)}</span>
+                <span className="font-mono">${(activeStock.price * quantity).toFixed(2)}</span>
               </div>
             </div>
 
             <button
               onClick={handleExecuteOrder}
-              style={{
-                backgroundColor: orderType === 'BUY' ? '#10b981' : '#f43f5e',
-                color: '#fff',
-                border: 'none',
-                padding: '10px',
-                borderRadius: '6px',
-                fontWeight: '700',
-                fontSize: '13px',
-                cursor: 'pointer',
-                marginTop: '6px'
-              }}
+              className={`w-full py-2.5 rounded font-bold text-xs text-white cursor-pointer mt-1 ${
+                orderType === 'BUY' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-rose-500 hover:bg-rose-600'
+              }`}
             >
               Place {orderType} Order
             </button>
