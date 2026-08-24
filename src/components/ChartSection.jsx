@@ -1,63 +1,43 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, ColorType, CandlestickSeries, HistogramSeries, LineSeries } from 'lightweight-charts';
-import { BarChart2, Sliders } from 'lucide-react';
+import { createChart, CandlestickSeries } from 'lightweight-charts';
 
-function generateHistoricalCandles(basePrice) {
-  const data = [];
-  const volumeData = [];
-  const smaData = [];
-  let currentPrice = basePrice;
-  const now = Math.floor(Date.now() / 1000);
-
-  for (let i = 60; i >= 0; i--) {
-    const time = now - i * 60;
-    const open = currentPrice + (Math.random() - 0.5) * 1.5;
-    const high = Math.max(open, open + Math.random() * 2);
-    const low = Math.min(open, open - Math.random() * 2);
-    const close = low + Math.random() * (high - low);
-    currentPrice = close;
-
-    data.push({ time, open, high, low, close });
-    volumeData.push({
-      time,
-      value: Math.floor(Math.random() * 5000) + 1000,
-      color: close >= open ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)',
-    });
-  }
-
-  for (let i = 0; i < data.length; i++) {
-    if (i < 20) continue;
-    const slice = data.slice(i - 20, i);
-    const avg = slice.reduce((sum, item) => sum + item.close, 0) / 20;
-    smaData.push({ time: data[i].time, value: avg });
-  }
-
-  return { candles: data, volumes: volumeData, sma: smaData };
-}
-
-function TradingCanvas({ activeStock, showSMA }) {
+export default function ChartSection({ activeStock, showSMA, setShowSMA, timeframe, setTimeframe }) {
   const chartContainerRef = useRef(null);
+  const chartRef = useRef(null);
+  const seriesRef = useRef(null);
+  const lastCandleRef = useRef(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { type: ColorType.Solid, color: '#0f172a' },
-        textColor: '#64748b',
-        fontFamily: 'sans-serif',
+        background: { type: 'solid', color: '#0f172a' },
+        textColor: '#94a3b8',
       },
       grid: {
         vertLines: { color: '#1e293b' },
         horzLines: { color: '#1e293b' },
       },
       crosshair: { mode: 1 },
-      rightPriceScale: { borderColor: '#1e293b' },
-      timeScale: { borderColor: '#1e293b', timeVisible: true, secondsVisible: false },
-      autoSize: true,
+      rightPriceScale: {
+        borderColor: '#334155',
+        autoScale: true,
+      },
+      timeScale: {
+        borderColor: '#334155',
+        timeVisible: true,
+        secondsVisible: false,
+      },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true },
+      handleScale: {
+        axisPressedMouseMove: { time: true, price: true },
+        mouseWheel: true,
+        pinch: true,
+      },
     });
 
-    const candleSeries = chart.addSeries(CandlestickSeries, {
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#10b981',
       downColor: '#f43f5e',
       borderVisible: false,
@@ -65,105 +45,115 @@ function TradingCanvas({ activeStock, showSMA }) {
       wickDownColor: '#f43f5e',
     });
 
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: { type: 'volume' },
-      priceScaleId: '',
-    });
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
-    });
+    // Anchor historical candles directly around the LIVE ACTIVE PRICE
+    const mockData = [];
+    const now = Math.floor(Date.now() / 1000);
+    const totalBars = 60;
+    const intervalSeconds = timeframe === '1M' ? 60 : timeframe === '15M' ? 900 : 300;
 
-    const { candles, volumes, sma } = generateHistoricalCandles(activeStock.price);
-    candleSeries.setData(candles);
-    volumeSeries.setData(volumes);
+    // Work BACKWARDS from activeStock.price so the current price connects seamlessly
+    let runningPrice = activeStock.price;
+    
+    for (let i = 0; i <= totalBars; i++) {
+      const time = now - i * intervalSeconds;
+      const change = (Math.random() - 0.49) * 0.4; // Small micro ticks ($0.40 spread)
+      
+      const close = runningPrice;
+      const open = close - change;
+      const high = Math.max(open, close) + Math.random() * 0.15;
+      const low = Math.min(open, close) - Math.random() * 0.15;
 
-    if (showSMA) {
-      const smaSeries = chart.addSeries(LineSeries, {
-        color: '#6366f1',
-        lineWidth: 2,
+      mockData.unshift({
+        time,
+        open: parseFloat(open.toFixed(2)),
+        high: parseFloat(high.toFixed(2)),
+        low: parseFloat(low.toFixed(2)),
+        close: parseFloat(close.toFixed(2)),
       });
-      smaSeries.setData(sma);
+
+      runningPrice = open; // Step backwards
     }
 
-    const interval = setInterval(() => {
-      const lastCandle = candles[candles.length - 1];
-      const delta = (Math.random() - 0.48) * 1.2;
-      const newClose = Math.max(1, lastCandle.close + delta);
-      const updatedCandle = {
-        ...lastCandle,
-        high: Math.max(lastCandle.high, newClose),
-        low: Math.min(lastCandle.low, newClose),
-        close: newClose,
-      };
+    const lastBar = mockData[mockData.length - 1];
+    lastCandleRef.current = { ...lastBar };
 
-      candleSeries.update(updatedCandle);
-    }, 2000);
+    candlestickSeries.setData(mockData);
+    chart.timeScale().fitContent();
+
+    chartRef.current = chart;
+    seriesRef.current = candlestickSeries;
+
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        chart.applyOptions({
+          width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, [activeStock.symbol, showSMA]);
+  }, [activeStock.symbol, timeframe]);
 
-  return <div ref={chartContainerRef} className="w-full h-full" />;
-}
+  // Update live candle smoothly
+  useEffect(() => {
+    if (seriesRef.current && lastCandleRef.current) {
+      const price = activeStock.price;
+      const updated = {
+        ...lastCandleRef.current,
+        high: Math.max(lastCandleRef.current.high, price),
+        low: Math.min(lastCandleRef.current.low, price),
+        close: price,
+      };
+      lastCandleRef.current = updated;
+      seriesRef.current.update(updated);
+    }
+  }, [activeStock.price]);
 
-export default function ChartSection({ activeStock, showSMA, setShowSMA, timeframe, setTimeframe }) {
   return (
-    <>
-      <div className="flex justify-between items-center bg-slate-900 p-3 rounded-lg border border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-black m-0">{activeStock.symbol}</h2>
-            <span className="text-xs text-slate-400">{activeStock.name}</span>
+    <div className="bg-slate-900 rounded-lg border border-slate-800 p-3 flex flex-col h-[380px]">
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold text-white m-0">{activeStock.symbol}</h2>
+          <span className="text-xs text-slate-400">{activeStock.name}</span>
+          <span className={`text-xs font-mono font-bold ${activeStock.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            ${activeStock.price.toFixed(2)} ({activeStock.change >= 0 ? '+' : ''}{activeStock.change.toFixed(2)}%)
+          </span>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowSMA(!showSMA)}
+            className={`px-2 py-0.5 text-[10px] font-bold rounded border cursor-pointer ${
+              showSMA 
+                ? 'bg-indigo-600/30 text-indigo-400 border-indigo-500/40' 
+                : 'bg-slate-800 text-slate-400 border-slate-700'
+            }`}
+          >
+            SMA (20)
+          </button>
+          <div className="flex bg-slate-800 rounded p-0.5 border border-slate-700">
+            {['1M', '5M', '15M', '1H', '1D'].map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`px-1.5 py-0.5 text-[10px] rounded cursor-pointer ${
+                  timeframe === tf ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="font-mono text-xl font-bold text-white">${activeStock.price.toFixed(2)}</span>
-            <span className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${
-              activeStock.change >= 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'
-            }`}>
-              {activeStock.change >= 0 ? `+${activeStock.change}%` : `${activeStock.change}%`}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex gap-4 text-[10px] text-slate-400">
-          <div><span className="block text-slate-500">24h High</span><span className="font-mono text-slate-200 font-semibold">${activeStock.high}</span></div>
-          <div><span className="block text-slate-500">24h Low</span><span className="font-mono text-slate-200 font-semibold">${activeStock.low}</span></div>
-          <div><span className="block text-slate-500">Volume</span><span className="font-mono text-slate-200 font-semibold">{activeStock.volume}</span></div>
         </div>
       </div>
 
-      <div className="bg-slate-900 rounded-lg border border-slate-800 px-3 py-2 flex justify-between items-center">
-        <div className="flex items-center gap-1">
-          <BarChart2 size={14} className="text-indigo-400 mr-1" />
-          <span className="text-xs font-bold text-slate-400 mr-2">Candlestick Engine</span>
-          {['1M', '5M', '1H', '1D'].map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setTimeframe(tf)}
-              className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer ${
-                timeframe === tf ? 'bg-slate-800 text-indigo-400 border border-slate-700' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {tf}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => setShowSMA(!showSMA)}
-          className={`px-2 py-0.5 rounded text-[10px] font-bold border cursor-pointer flex items-center gap-1 ${
-            showSMA ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'text-slate-400 border-slate-800'
-          }`}
-        >
-          <Sliders size={11} /> SMA (20)
-        </button>
-      </div>
-
-      <div className="bg-slate-900 rounded-lg border border-slate-800 h-80 overflow-hidden">
-        <TradingCanvas activeStock={activeStock} showSMA={showSMA} />
-      </div>
-    </>
+      <div ref={chartContainerRef} className="flex-1 w-full relative min-h-0" />
+    </div>
   );
 }
