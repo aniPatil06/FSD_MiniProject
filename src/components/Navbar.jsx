@@ -1,7 +1,7 @@
 import React from 'react';
-import { Wallet } from 'lucide-react';
+import { Wallet, RotateCcw } from 'lucide-react';
 
-export default function Navbar({ balance }) {
+export default function Navbar({ balance, onReset }) {
   return (
     <header className="h-14 border-b border-slate-800 bg-slate-900 px-5 flex justify-between items-center shrink-0">
       <div className="flex items-center gap-2">
@@ -16,13 +16,23 @@ export default function Navbar({ balance }) {
         </h1>
       </div>
 
-      <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-1 rounded border border-slate-700">
-        <Wallet size={14} className="text-emerald-400" />
-        <div className="text-right">
-          <span className="text-[10px] text-slate-400 block leading-none">Available Funds</span>
-          <span className="font-mono text-xs font-bold text-emerald-400">
-            ${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-          </span>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onReset}
+          title="Reset Demo State"
+          className="p-1.5 text-slate-400 hover:text-white bg-slate-800/80 rounded border border-slate-700 transition-colors cursor-pointer"
+        >
+          <RotateCcw size={13} />
+        </button>
+
+        <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-1 rounded border border-slate-700">
+          <Wallet size={14} className="text-emerald-400" />
+          <div className="text-right">
+            <span className="text-[10px] text-slate-400 block leading-none">Available Funds</span>
+            <span className="font-mono text-xs font-bold text-emerald-400">
+              ${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
         </div>
       </div>
     </header>
