@@ -1,7 +1,10 @@
 import React from 'react';
 import { Wallet, RotateCcw, LayoutDashboard, Briefcase, ListOrdered } from 'lucide-react';
+import { useTrading } from '../context/TradingContext';
 
-export default function Navbar({ balance, onReset, currentPage, setCurrentPage }) {
+export default function Navbar() {
+  const { balance, resetState, currentPage, setCurrentPage } = useTrading();
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'holdings', label: 'Holdings', icon: Briefcase },
@@ -23,7 +26,6 @@ export default function Navbar({ balance, onReset, currentPage, setCurrentPage }
           </h1>
         </div>
 
-        {/* Zerodha-Style Navigation Tabs */}
         <nav className="flex items-center gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -48,7 +50,7 @@ export default function Navbar({ balance, onReset, currentPage, setCurrentPage }
 
       <div className="flex items-center gap-3">
         <button
-          onClick={onReset}
+          onClick={resetState}
           title="Reset Demo State"
           className="p-1.5 text-slate-400 hover:text-white bg-slate-800/80 rounded border border-slate-700 transition-colors cursor-pointer"
         >
