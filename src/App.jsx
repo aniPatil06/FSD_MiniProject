@@ -14,12 +14,12 @@ const INITIAL_STOCKS = [
 ];
 
 export default function App() {
+  const [currentPage, setCurrentPage] = useState('dashboard'); // 'dashboard' | 'holdings' | 'orders'
   const [stocks, setStocks] = useState(INITIAL_STOCKS);
   const [selectedSymbol, setSelectedSymbol] = useState('NVDA');
   const [timeframe, setTimeframe] = useState('5M');
   const [showSMA, setShowSMA] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('portfolio');
 
   // Form State
   const [quantity, setQuantity] = useState(10);
@@ -27,7 +27,7 @@ export default function App() {
   const [executionType, setExecutionType] = useState('MARKET');
   const [targetPrice, setTargetPrice] = useState(0);
 
-  // Persistent State
+  // Persistence State
   const [balance, setBalance] = useState(() => {
     const saved = localStorage.getItem('pt_balance');
     return saved ? JSON.parse(saved) : 100000.00;
@@ -64,10 +64,8 @@ export default function App() {
           };
         });
 
-        // Evaluate Pending Limit & Stop-Loss Trigger Conditions
         setPendingOrders((prevPending) => {
           const remaining = [];
-          
           prevPending.forEach((order) => {
             const currentStock = updatedStocks.find((s) => s.symbol === order.symbol);
             if (!currentStock) return;
@@ -86,7 +84,6 @@ export default function App() {
               remaining.push(order);
             }
           });
-
           return remaining;
         });
 
@@ -156,7 +153,6 @@ export default function App() {
     if (executionType === 'MARKET') {
       executeOrderDirectly({ symbol: activeStock.symbol, qty: quantity, type: orderType, executionType: 'MARKET' }, activeStock.price);
     } else {
-      // Create Pending Conditional Order
       const newPendingOrder = {
         id: Date.now(),
         symbol: activeStock.symbol,
@@ -182,100 +178,101 @@ export default function App() {
 
   return (
     <div className="w-screen h-screen flex flex-col bg-slate-950 text-slate-100 font-sans">
-      <Navbar balance={balance} onReset={handleClearHistory} />
+      <Navbar 
+        balance={balance} 
+        onReset={handleClearHistory} 
+        currentPage={currentPage} 
+        setCurrentPage={setCurrentPage} 
+      />
 
-      <div className="flex-1 grid grid-cols-12 overflow-hidden">
-        <Watchlist 
-          filteredStocks={filteredStocks} 
-          activeStock={activeStock} 
-          setSelectedSymbol={setSelectedSymbol} 
-          searchQuery={searchQuery} 
-          setSearchQuery={setSearchQuery} 
-        />
-
-        <main className="col-span-6 p-3 flex flex-col gap-3 overflow-y-auto bg-slate-950">
-          <ChartSection 
+      <div className="flex-1 flex overflow-hidden">
+        {/* Watchlist remains visible across views (Zerodha Style) */}
+        <div className="w-80 border-r border-slate-800 shrink-0">
+          <Watchlist 
+            filteredStocks={filteredStocks} 
             activeStock={activeStock} 
-            showSMA={showSMA} 
-            setShowSMA={setShowSMA} 
-            timeframe={timeframe} 
-            setTimeframe={setTimeframe} 
+            setSelectedSymbol={setSelectedSymbol} 
+            searchQuery={searchQuery} 
+            setSearchQuery={setSearchQuery} 
           />
+        </div>
 
-          <div className="flex gap-2 border-b border-slate-800 pb-1">
-            <button
-              onClick={() => setActiveTab('portfolio')}
-              className={`px-3 py-1 text-xs font-bold rounded cursor-pointer ${
-                activeTab === 'portfolio' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Live Portfolio & P&L
-            </button>
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`px-3 py-1 text-xs font-bold rounded cursor-pointer ${
-                activeTab === 'orders' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Order Book ({trades.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('pending')}
-              className={`px-3 py-1 text-xs font-bold rounded cursor-pointer ${
-                activeTab === 'pending' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Pending Triggers ({pendingOrders.length})
-            </button>
-          </div>
+        {/* Dynamic Multi-Page View Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {currentPage === 'dashboard' && (
+            <div className="flex-1 grid grid-cols-12 overflow-hidden">
+              <main className="col-span-8 p-3 flex flex-col gap-3 overflow-y-auto bg-slate-950">
+                <ChartSection 
+                  activeStock={activeStock} 
+                  showSMA={showSMA} 
+                  setShowSMA={setShowSMA} 
+                  timeframe={timeframe} 
+                  setTimeframe={setTimeframe} 
+                />
+                <Portfolio positions={positions} stocks={stocks} />
+              </main>
 
-          {activeTab === 'portfolio' && <Portfolio positions={positions} stocks={stocks} />}
-          {activeTab === 'orders' && <OrderBook trades={trades} />}
-          {activeTab === 'pending' && (
-            <div className="bg-slate-900 rounded-lg border border-slate-800 p-3">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pending Trigger Queue</h3>
-              {pendingOrders.length === 0 ? (
-                <p className="text-[11px] text-slate-500 m-0 py-1">No active Limit or Stop-Loss triggers queued.</p>
-              ) : (
-                <table className="w-full text-[11px] border-collapse">
-                  <thead>
-                    <tr className="text-slate-500 text-left border-b border-slate-800">
-                      <th className="pb-1">Asset</th>
-                      <th className="pb-1">Mode</th>
-                      <th className="pb-1">Side</th>
-                      <th className="pb-1">Qty</th>
-                      <th className="pb-1 text-right">Target Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingOrders.map((o) => (
-                      <tr key={o.id} className="border-b border-slate-800/40 font-mono">
-                        <td className="py-1 font-bold font-sans text-white">{o.symbol}</td>
-                        <td className="py-1 text-indigo-400 font-semibold">{o.executionType}</td>
-                        <td className={`py-1 font-bold ${o.type === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>{o.type}</td>
-                        <td className="py-1">{o.qty}</td>
-                        <td className="py-1 text-right font-bold text-slate-200">${o.targetPrice.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <OrderPanel 
+                executionType={executionType}
+                setExecutionType={setExecutionType}
+                targetPrice={targetPrice}
+                setTargetPrice={setTargetPrice}
+                orderType={orderType} 
+                setOrderType={setOrderType} 
+                quantity={quantity} 
+                setQuantity={setQuantity} 
+                activeStock={activeStock} 
+                handleExecuteOrder={handleExecuteOrder} 
+              />
             </div>
           )}
-        </main>
 
-        <OrderPanel 
-          executionType={executionType}
-          setExecutionType={setExecutionType}
-          targetPrice={targetPrice}
-          setTargetPrice={setTargetPrice}
-          orderType={orderType} 
-          setOrderType={setOrderType} 
-          quantity={quantity} 
-          setQuantity={setQuantity} 
-          activeStock={activeStock} 
-          handleExecuteOrder={handleExecuteOrder} 
-        />
+          {currentPage === 'holdings' && (
+            <main className="flex-1 p-5 overflow-y-auto bg-slate-950">
+              <h2 className="text-lg font-bold text-white mb-4">Holdings & Portfolio Analytics</h2>
+              <Portfolio positions={positions} stocks={stocks} />
+            </main>
+          )}
+
+          {currentPage === 'orders' && (
+            <main className="flex-1 p-5 overflow-y-auto bg-slate-950 flex flex-col gap-6">
+              <div>
+                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Pending Conditional Triggers</h2>
+                {pendingOrders.length === 0 ? (
+                  <p className="text-xs text-slate-500">No pending limit or stop-loss orders.</p>
+                ) : (
+                  <table className="w-full text-xs border-collapse bg-slate-900 rounded border border-slate-800 p-2">
+                    <thead>
+                      <tr className="text-slate-500 text-left border-b border-slate-800 p-2">
+                        <th className="p-2">Asset</th>
+                        <th className="p-2">Mode</th>
+                        <th className="p-2">Type</th>
+                        <th className="p-2">Qty</th>
+                        <th className="p-2 text-right">Target Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingOrders.map((o) => (
+                        <tr key={o.id} className="border-b border-slate-800/40 font-mono">
+                          <td className="p-2 font-bold font-sans text-white">{o.symbol}</td>
+                          <td className="p-2 text-indigo-400 font-semibold">{o.executionType}</td>
+                          <td className={`p-2 font-bold ${o.type === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>{o.type}</td>
+                          <td className="p-2">{o.qty}</td>
+                          <td className="p-2 text-right font-bold text-slate-200">${o.targetPrice.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <div>
+                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Execution Order Log</h2>
+                <OrderBook trades={trades} />
+              </div>
+            </main>
+          )}
+        </div>
       </div>
     </div>
   );
