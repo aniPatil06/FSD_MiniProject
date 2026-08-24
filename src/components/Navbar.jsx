@@ -3,7 +3,7 @@ import { Wallet, RotateCcw, LayoutDashboard, Briefcase, ListOrdered } from 'luci
 import { useTrading } from '../context/TradingContext';
 
 export default function Navbar() {
-  const { balance, resetState, currentPage, setCurrentPage } = useTrading();
+  const { balance = 100000, resetState, currentPage, setCurrentPage } = useTrading();
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,7 +12,7 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="h-14 border-b border-slate-800 bg-slate-900 px-5 flex justify-between items-center shrink-0">
+    <header className="h-14 border-b border-slate-800 bg-slate-900 px-5 flex justify-between items-center shrink-0 w-full z-50">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <div className="bg-indigo-600 text-white font-black w-7 h-7 rounded flex items-center justify-center text-xs">
@@ -62,7 +62,7 @@ export default function Navbar() {
           <div className="text-right">
             <span className="text-[10px] text-slate-400 block leading-none">Available Funds</span>
             <span className="font-mono text-xs font-bold text-emerald-400">
-              ${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              ${Number(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>

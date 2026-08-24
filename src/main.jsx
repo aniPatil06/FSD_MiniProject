@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { TradingProvider } from './context/TradingContext';
 import App from './App';
-import './style.css';
+import './style.css'; // Make sure this matches your actual CSS filename (style.css)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

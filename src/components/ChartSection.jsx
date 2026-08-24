@@ -1,93 +1,114 @@
 import React, { useEffect, useRef } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, LineSeries, HistogramSeries } from 'lightweight-charts';
+import { useTrading } from '../context/TradingContext';
 
-export default function ChartSection({ activeStock, showSMA, setShowSMA, timeframe, setTimeframe }) {
+export default function ChartSection({ showSMA, setShowSMA, timeframe, setTimeframe }) {
+  const { activeStock } = useTrading();
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
+  const smaSeriesRef = useRef(null);
+  const volumeSeriesRef = useRef(null);
   const lastCandleRef = useRef(null);
 
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!chartContainerRef.current || !activeStock) return;
+
+    chartContainerRef.current.innerHTML = '';
 
     const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: 'solid', color: '#0f172a' },
-        textColor: '#94a3b8',
-      },
-      grid: {
-        vertLines: { color: '#1e293b' },
-        horzLines: { color: '#1e293b' },
-      },
+      layout: { background: { type: 'solid', color: '#0f172a' }, textColor: '#94a3b8' },
+      grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
       crosshair: { mode: 1 },
-      rightPriceScale: {
-        borderColor: '#334155',
-        autoScale: true,
-      },
-      timeScale: {
-        borderColor: '#334155',
-        timeVisible: true,
-        secondsVisible: false,
-      },
+      rightPriceScale: { borderColor: '#334155', autoScale: true },
+      timeScale: { borderColor: '#334155', timeVisible: true, secondsVisible: true },
       handleScroll: { mouseWheel: true, pressedMouseMove: true },
-      handleScale: {
-        axisPressedMouseMove: { time: true, price: true },
-        mouseWheel: true,
-        pinch: true,
-      },
+      handleScale: { axisPressedMouseMove: { time: true, price: true }, mouseWheel: true, pinch: true },
     });
 
     const candlestickSeries = chart.addSeries(CandlestickSeries, {
-      upColor: '#10b981',
-      downColor: '#f43f5e',
-      borderVisible: false,
-      wickUpColor: '#10b981',
-      wickDownColor: '#f43f5e',
+      upColor: '#10b981', downColor: '#f43f5e', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#f43f5e',
     });
 
-    // Anchor historical candles directly around the LIVE ACTIVE PRICE
+    // Dedicated Volume Scale at the bottom
+    const volumeSeries = chart.addSeries(HistogramSeries, {
+      color: '#334155',
+      priceFormat: { type: 'volume' },
+      priceScaleId: 'volume_scale',
+    });
+
+    chart.priceScale('volume_scale').applyOptions({
+      scaleMargins: {
+        top: 0.8,
+        bottom: 0,
+      },
+    });
+
+    const smaSeries = chart.addSeries(LineSeries, {
+      color: '#6366f1',
+      lineWidth: 2,
+      visible: showSMA,
+    });
+
     const mockData = [];
+    const volumeData = [];
     const now = Math.floor(Date.now() / 1000);
     const totalBars = 60;
-    const intervalSeconds = timeframe === '1M' ? 60 : timeframe === '15M' ? 900 : 300;
+    const intervalMap = { '1M': 60, '5M': 300, '15M': 900, '1H': 3600, '1D': 86400 };
+    const intervalSeconds = intervalMap[timeframe] || 300;
 
-    // Work BACKWARDS from activeStock.price so the current price connects seamlessly
     let runningPrice = activeStock.price;
-    
+
     for (let i = 0; i <= totalBars; i++) {
-      const time = now - i * intervalSeconds;
-      const change = (Math.random() - 0.49) * 0.4; // Small micro ticks ($0.40 spread)
-      
+      const time = now - (totalBars - i) * intervalSeconds;
+      const change = (Math.random() - 0.49) * (runningPrice * 0.005);
       const close = runningPrice;
       const open = close - change;
-      const high = Math.max(open, close) + Math.random() * 0.15;
-      const low = Math.min(open, close) - Math.random() * 0.15;
+      const high = Math.max(open, close) + Math.random() * (runningPrice * 0.002);
+      const low = Math.min(open, close) - Math.random() * (runningPrice * 0.002);
+      const vol = Math.floor(Math.random() * 8000) + 1200;
 
-      mockData.unshift({
-        time,
-        open: parseFloat(open.toFixed(2)),
-        high: parseFloat(high.toFixed(2)),
-        low: parseFloat(low.toFixed(2)),
-        close: parseFloat(close.toFixed(2)),
+      mockData.push({ 
+        time, 
+        open: parseFloat(open.toFixed(2)), 
+        high: parseFloat(high.toFixed(2)), 
+        low: parseFloat(low.toFixed(2)), 
+        close: parseFloat(close.toFixed(2)) 
       });
 
-      runningPrice = open; // Step backwards
+      volumeData.push({ 
+        time, 
+        value: vol, 
+        color: close >= open ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)' 
+      });
+
+      runningPrice = close + (Math.random() - 0.48) * (runningPrice * 0.003);
     }
 
-    const lastBar = mockData[mockData.length - 1];
-    lastCandleRef.current = { ...lastBar };
+    const smaData = [];
+    for (let i = 0; i < mockData.length; i++) {
+      if (i < 20) continue;
+      const slice = mockData.slice(i - 20, i);
+      const sum = slice.reduce((acc, bar) => acc + bar.close, 0);
+      smaData.push({ time: mockData[i].time, value: parseFloat((sum / 20).toFixed(2)) });
+    }
 
+    lastCandleRef.current = { ...mockData[mockData.length - 1] };
     candlestickSeries.setData(mockData);
+    volumeSeries.setData(volumeData);
+    smaSeries.setData(smaData);
     chart.timeScale().fitContent();
 
     chartRef.current = chart;
     seriesRef.current = candlestickSeries;
+    smaSeriesRef.current = smaSeries;
+    volumeSeriesRef.current = volumeSeries;
 
     const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: chartContainerRef.current.clientHeight,
+      if (chartContainerRef.current && chart) {
+        chart.applyOptions({ 
+          width: chartContainerRef.current.clientWidth, 
+          height: chartContainerRef.current.clientHeight 
         });
       }
     };
@@ -100,9 +121,12 @@ export default function ChartSection({ activeStock, showSMA, setShowSMA, timefra
     };
   }, [activeStock.symbol, timeframe]);
 
-  // Update live candle smoothly
   useEffect(() => {
-    if (seriesRef.current && lastCandleRef.current) {
+    if (smaSeriesRef.current) smaSeriesRef.current.applyOptions({ visible: showSMA });
+  }, [showSMA]);
+
+  useEffect(() => {
+    if (seriesRef.current && lastCandleRef.current && activeStock) {
       const price = activeStock.price;
       const updated = {
         ...lastCandleRef.current,
@@ -113,7 +137,7 @@ export default function ChartSection({ activeStock, showSMA, setShowSMA, timefra
       lastCandleRef.current = updated;
       seriesRef.current.update(updated);
     }
-  }, [activeStock.price]);
+  }, [activeStock?.price]);
 
   return (
     <div className="bg-slate-900 rounded-lg border border-slate-800 p-3 flex flex-col h-[380px]">
@@ -130,9 +154,7 @@ export default function ChartSection({ activeStock, showSMA, setShowSMA, timefra
           <button
             onClick={() => setShowSMA(!showSMA)}
             className={`px-2 py-0.5 text-[10px] font-bold rounded border cursor-pointer ${
-              showSMA 
-                ? 'bg-indigo-600/30 text-indigo-400 border-indigo-500/40' 
-                : 'bg-slate-800 text-slate-400 border-slate-700'
+              showSMA ? 'bg-indigo-600/30 text-indigo-400 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
             }`}
           >
             SMA (20)
@@ -142,7 +164,7 @@ export default function ChartSection({ activeStock, showSMA, setShowSMA, timefra
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}
-                className={`px-1.5 py-0.5 text-[10px] rounded cursor-pointer ${
+                className={`px-1.5 py-0.5 text-[10px] rounded cursor-pointer transition-all ${
                   timeframe === tf ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -152,7 +174,6 @@ export default function ChartSection({ activeStock, showSMA, setShowSMA, timefra
           </div>
         </div>
       </div>
-
       <div ref={chartContainerRef} className="flex-1 w-full relative min-h-0" />
     </div>
   );
