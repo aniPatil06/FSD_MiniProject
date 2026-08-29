@@ -1,71 +1,49 @@
 import React from 'react';
-import { Wallet, RotateCcw, LayoutDashboard, Briefcase, ListOrdered } from 'lucide-react';
 import { useTrading } from '../context/TradingContext';
 
-export default function Navbar() {
-  const { balance = 100000, resetState, currentPage, setCurrentPage } = useTrading();
-
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'holdings', label: 'Holdings', icon: Briefcase },
-    { id: 'orders', label: 'Orders', icon: ListOrdered },
-  ];
+// Pass onOpenAuth as a prop from App.jsx
+export default function Navbar({ onOpenAuth }) {
+  const { balance, positions, setCurrentPage, currentPage } = useTrading();
 
   return (
-    <header className="h-14 border-b border-slate-800 bg-slate-900 px-5 flex justify-between items-center shrink-0 w-full z-50">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 text-white font-black w-7 h-7 rounded flex items-center justify-center text-xs">
-            PT
-          </div>
-          <h1 className="text-sm font-bold text-white flex items-center">
-            PulseTrade 
-            <span className="text-[10px] font-semibold bg-indigo-500/20 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/30 ml-2">
-              PRO TERMINAL
-            </span>
-          </h1>
+    <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex justify-between items-center select-none">
+      <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setCurrentPage('dashboard')}>
+          <div className="bg-blue-600 text-white p-1.5 rounded-lg font-bold text-xs">PT</div>
+          <span className="font-bold text-base text-slate-100">PulseTrade <span className="text-blue-500 text-xs">PRO</span></span>
         </div>
 
-        <nav className="flex items-center gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentPage(item.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold cursor-pointer transition-colors ${
-                  isActive 
-                    ? 'bg-slate-800 text-indigo-400 border border-slate-700' 
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Icon size={14} />
-                {item.label}
-              </button>
-            );
-          })}
+        {/* Dynamic View Navigation */}
+        <nav className="flex space-x-1 text-xs">
+          <button 
+            onClick={() => setCurrentPage('dashboard')}
+            className={`px-3 py-1.5 rounded font-medium transition-colors ${currentPage === 'dashboard' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Terminal
+          </button>
+          <button 
+            onClick={() => setCurrentPage('holdings')}
+            className={`px-3 py-1.5 rounded font-medium transition-colors ${currentPage === 'holdings' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Holdings
+          </button>
+          <button 
+            onClick={() => setCurrentPage('orders')}
+            className={`px-3 py-1.5 rounded font-medium transition-colors ${currentPage === 'orders' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Orders
+          </button>
         </nav>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={resetState}
-          title="Reset Demo State"
-          className="p-1.5 text-slate-400 hover:text-white bg-slate-800/80 rounded border border-slate-700 transition-colors cursor-pointer"
+      <div className="flex items-center space-x-4">
+        {/* Sign In / Auth Button */}
+        <button 
+          onClick={onOpenAuth}
+          className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-blue-600/30"
         >
-          <RotateCcw size={13} />
+          Sign In / Register
         </button>
-
-        <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-1 rounded border border-slate-700">
-          <Wallet size={14} className="text-emerald-400" />
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 block leading-none">Available Funds</span>
-            <span className="font-mono text-xs font-bold text-emerald-400">
-              ${Number(balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-        </div>
       </div>
     </header>
   );

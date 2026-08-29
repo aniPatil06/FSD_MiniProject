@@ -28,7 +28,7 @@ export default function Watchlist({ filteredStocks, activeStock, setSelectedSymb
             <div
               key={stock.symbol}
               onClick={() => setSelectedSymbol(stock.symbol)}
-              className={`p-3 flex justify-between items-center cursor-pointer transition-colors group ${
+              className={`p-2 md:p-3 flex justify-between items-center cursor-pointer transition-colors group ${
                 isActive ? 'bg-slate-800/80 border-l-2 border-indigo-500' : 'hover:bg-slate-800/40'
               }`}
             >

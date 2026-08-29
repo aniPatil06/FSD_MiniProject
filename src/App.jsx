@@ -5,6 +5,7 @@ import ChartSection from './components/ChartSection';
 import OrderBook from './components/OrderBook';
 import OrderPanel from './components/OrderPanel';
 import Portfolio from './components/Portfolio';
+import AuthModal from './components/AuthModal';
 import { useTrading } from './context/TradingContext';
 
 export default function App() {
@@ -19,6 +20,8 @@ export default function App() {
     executeOrderDirectly, 
     setPendingOrders 
   } = useTrading();
+
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const [timeframe, setTimeframe] = useState('5M');
   const [showSMA, setShowSMA] = useState(true);
@@ -54,12 +57,21 @@ export default function App() {
   };
 
   return (
-    <div className="w-screen h-screen flex flex-col bg-slate-950 text-slate-100 font-sans overflow-hidden">
-      <Navbar />
+    <div className="w-screen min-h-screen md:h-screen flex flex-col bg-slate-950 text-slate-100 font-sans overflow-x-hidden md:overflow-hidden">
+      
+      {/* Navbar with Auth Toggle Handler */}
+      <Navbar onOpenAuth={() => setIsAuthOpen(true)} />
 
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Left Watchlist Sidebar - Always Visible */}
-        <div className="w-80 border-r border-slate-800 shrink-0">
+      {/* Auth Modal Component */}
+      <AuthModal 
+        isOpen={isAuthOpen} 
+        onClose={() => setIsAuthOpen(false)} 
+      />
+
+      <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+        
+        {/* Watchlist Sidebar: Collapsible height on mobile, fixed width on tablet/desktop */}
+        <div className="w-full md:w-64 lg:w-80 border-b md:border-b-0 md:border-r border-slate-800 shrink-0 max-h-60 md:max-h-none overflow-y-auto">
           <Watchlist 
             filteredStocks={filteredStocks} 
             activeStock={activeStock} 
@@ -70,10 +82,12 @@ export default function App() {
         </div>
 
         {/* Dynamic Main View Switcher */}
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="flex-1 flex overflow-y-auto md:overflow-hidden min-h-0">
           {currentPage === 'dashboard' && (
-            <div className="flex-1 grid grid-cols-12 overflow-hidden h-full">
-              <main className="col-span-8 p-3 flex flex-col gap-3 overflow-y-auto bg-slate-950 min-h-0">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden h-full">
+              
+              {/* Main Chart and Holdings Section */}
+              <main className="col-span-1 lg:col-span-8 p-3 flex flex-col gap-3 overflow-y-auto bg-slate-950 min-h-0">
                 <ChartSection 
                   showSMA={showSMA} 
                   setShowSMA={setShowSMA} 
@@ -83,7 +97,8 @@ export default function App() {
                 <Portfolio positions={positions} stocks={stocks} />
               </main>
 
-              <div className="col-span-4 border-l border-slate-800 bg-slate-900 overflow-y-auto min-h-0">
+              {/* Order Panel Section */}
+              <div className="col-span-1 lg:col-span-4 border-t lg:border-t-0 lg:border-l border-slate-800 bg-slate-900 overflow-y-auto min-h-0">
                 <OrderPanel 
                   executionType={executionType}
                   setExecutionType={setExecutionType}
@@ -97,11 +112,12 @@ export default function App() {
                   handleExecuteOrder={handleExecuteOrder} 
                 />
               </div>
+
             </div>
           )}
 
           {currentPage === 'holdings' && (
-            <main className="flex-1 p-6 overflow-y-auto bg-slate-950">
+            <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-950">
               <div className="mb-6 border-b border-slate-800 pb-4">
                 <h2 className="text-xl font-bold text-white">Portfolio & Asset Holdings</h2>
                 <p className="text-xs text-slate-400 mt-1">Detailed breakdown of open positions, average costs, and net profit/loss performance.</p>
@@ -111,7 +127,7 @@ export default function App() {
           )}
 
           {currentPage === 'orders' && (
-            <main className="flex-1 p-6 overflow-y-auto bg-slate-950 flex flex-col gap-6">
+            <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-950 flex flex-col gap-6">
               <div className="border-b border-slate-800 pb-4">
                 <h2 className="text-xl font-bold text-white">Order Management Book</h2>
                 <p className="text-xs text-slate-400 mt-1">Active limit/stop orders and executed transaction history.</p>
@@ -124,28 +140,30 @@ export default function App() {
                     No active pending conditional orders.
                   </div>
                 ) : (
-                  <table className="w-full text-xs border-collapse bg-slate-900 rounded border border-slate-800">
-                    <thead>
-                      <tr className="text-slate-400 text-left border-b border-slate-800 bg-slate-800/50">
-                        <th className="p-3">Asset</th>
-                        <th className="p-3">Mode</th>
-                        <th className="p-3">Type</th>
-                        <th className="p-3">Qty</th>
-                        <th className="p-3 text-right">Target Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingOrders.map((o) => (
-                        <tr key={o.id} className="border-b border-slate-800/40 font-mono">
-                          <td className="p-3 font-bold font-sans text-white">{o.symbol}</td>
-                          <td className="p-3 text-indigo-400 font-semibold">{o.executionType}</td>
-                          <td className={`p-3 font-bold ${o.type === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>{o.type}</td>
-                          <td className="p-3">{o.qty}</td>
-                          <td className="p-3 text-right font-bold text-slate-200">${Number(o.targetPrice).toFixed(2)}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse bg-slate-900 rounded border border-slate-800 min-w-[500px]">
+                      <thead>
+                        <tr className="text-slate-400 text-left border-b border-slate-800 bg-slate-800/50">
+                          <th className="p-3">Asset</th>
+                          <th className="p-3">Mode</th>
+                          <th className="p-3">Type</th>
+                          <th className="p-3">Qty</th>
+                          <th className="p-3 text-right">Target Price</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {pendingOrders.map((o) => (
+                          <tr key={o.id} className="border-b border-slate-800/40 font-mono hover:bg-slate-800/50 transition-colors">
+                            <td className="p-3 font-bold font-sans text-white">{o.symbol}</td>
+                            <td className="p-3 text-indigo-400 font-semibold">{o.executionType}</td>
+                            <td className={`p-3 font-bold ${o.type === 'BUY' ? 'text-emerald-400' : 'text-rose-400'}`}>{o.type}</td>
+                            <td className="p-3">{o.qty}</td>
+                            <td className="p-3 text-right font-bold text-slate-200">${Number(o.targetPrice).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
