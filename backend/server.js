@@ -9,6 +9,7 @@ require("dotenv").config();
 
 const tradeRoutes = require("./routes/tradeRoutes");
 const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 
 const app = express();
@@ -40,8 +41,11 @@ app.get("/", (req, res) => {
   res.send("PulseTrade Engine API Running");
 });
 
+// ALL API Routes must go above Error Handling
 app.use("/api/trades", tradeRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 // Error Handling Middleware must be at the bottom
 app.use(notFound);
