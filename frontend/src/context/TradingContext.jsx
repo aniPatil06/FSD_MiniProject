@@ -7,6 +7,9 @@ const INITIAL_STOCKS = [
   { symbol: 'AMZN', name: 'Amazon.com', price: 178.20, change: -0.45, high: 180.50, low: 177.00, volume: '19.4M' },
 ];
 
+const INITIAL_BALANCE = 100000.00;
+const INITIAL_POSITIONS = {};
+
 const TradingContext = createContext();
 
 export function TradingProvider({ children }) {
@@ -17,7 +20,7 @@ export function TradingProvider({ children }) {
   // Persistence State
   const [balance, setBalance] = useState(() => {
     const saved = localStorage.getItem('pt_balance');
-    return saved ? JSON.parse(saved) : 100000.00;
+    return saved ? JSON.parse(saved) : INITIAL_BALANCE;
   });
 
   const [trades, setTrades] = useState(() => {
@@ -27,7 +30,7 @@ export function TradingProvider({ children }) {
 
   const [positions, setPositions] = useState(() => {
     const saved = localStorage.getItem('pt_positions');
-    return saved ? JSON.parse(saved) : {};
+    return saved ? JSON.parse(saved) : INITIAL_POSITIONS;
   });
 
   const [pendingOrders, setPendingOrders] = useState(() => {
@@ -130,13 +133,20 @@ export function TradingProvider({ children }) {
     ]);
   };
 
-  const resetState = () => {
+  // FULL RESET FUNCTION (Aliased for both resetAccount and resetState)
+  const resetAccount = () => {
     if (window.confirm('Reset account balance, pending orders, positions, and history?')) {
-      setBalance(100000.00);
+      // 1. Remove keys explicitly from localStorage
+      localStorage.removeItem('pt_balance');
+      localStorage.removeItem('pt_trades');
+      localStorage.removeItem('pt_positions');
+      localStorage.removeItem('pt_pending');
+
+      // 2. Clear state variables
+      setBalance(INITIAL_BALANCE);
       setTrades([]);
-      setPositions({});
+      setPositions(INITIAL_POSITIONS);
       setPendingOrders([]);
-      localStorage.clear();
     }
   };
 
@@ -157,7 +167,8 @@ export function TradingProvider({ children }) {
         pendingOrders,
         setPendingOrders,
         executeOrderDirectly,
-        resetState,
+        resetAccount,
+        resetState: resetAccount, // Maps both function names to avoid breakage
       }}
     >
       {children}
