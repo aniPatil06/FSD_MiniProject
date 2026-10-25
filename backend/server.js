@@ -51,8 +51,34 @@ app.use("/api/user", userRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+// Socket.IO Real-Time Chat Event Listeners
 io.on("connection", (socket) => {
   console.log(`Trader Connected: ${socket.id}`);
+
+  socket.on("chatMessage", (data) => {
+    if (
+      !data ||
+      typeof data.username !== "string" ||
+      typeof data.message !== "string"
+    ) {
+      return;
+    }
+    const username = data.username.trim();
+    const message = data.message.trim();
+
+    if (
+      !username ||
+      !message ||
+      username.length > 50 ||
+      message.length > 1000
+    ) {
+      return;
+    }
+
+    // Broadcast the message to all connected clients
+    io.emit("chatMessage", { username, message });
+  });
+
   socket.on("disconnect", () => {
     console.log(`Trader Disconnected: ${socket.id}`);
   });

@@ -44,6 +44,15 @@ export default function Navbar({ onOpenAuth }) {
           >
             Orders
           </button>
+          {/* Added Live Chat Navigation Tab */}
+          <button 
+            onClick={() => setCurrentPage('chat')}
+            className={`px-3 py-1.5 rounded font-medium transition-colors ${
+              currentPage === 'chat' ? 'bg-slate-800 text-blue-400' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Live Chat
+          </button>
         </nav>
       </div>
 

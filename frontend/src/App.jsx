@@ -6,6 +6,7 @@ import OrderBook from './components/OrderBook';
 import OrderPanel from './components/OrderPanel';
 import Portfolio from './components/Portfolio';
 import AuthModal from './components/AuthModal';
+import Chat from './components/Chat'; // Added Chat Component Import
 import { useTrading } from './context/TradingContext';
 
 export default function App() {
@@ -171,6 +172,13 @@ export default function App() {
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Completed Market Trades</h3>
                 <OrderBook trades={trades} />
               </div>
+            </main>
+          )}
+
+          {/* Real-Time Chat View Route */}
+          {currentPage === 'chat' && (
+            <main className="flex-1 overflow-y-auto bg-slate-950">
+              <Chat />
             </main>
           )}
         </div>
