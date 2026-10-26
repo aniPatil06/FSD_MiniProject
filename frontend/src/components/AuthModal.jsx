@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { useTrading } from '../context/TradingContext';
 import { API_BASE_URL } from '../config';
 
-export default function AuthModal({ isOpen, onClose }) {
+export default function AuthModal({ isOpen, onClose, onLogin, required = false }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,10 +33,13 @@ export default function AuthModal({ isOpen, onClose }) {
         setMessage('Registration successful! Please log in.');
         setIsLogin(true); // Switch to sign-in tab
       } else {
+        if (!data.token) {
+          throw new Error('The login response did not include an authentication token.');
+        }
+
+        onLogin(data.token);
         setMessage('Login successful!');
-        setTimeout(() => {
-          onClose();
-        }, 1500);
+        if (!required) onClose();
       }
     } catch (error) {
       setMessage(error.message);
@@ -54,9 +56,11 @@ export default function AuthModal({ isOpen, onClose }) {
               <div className="bg-blue-600 text-white p-1.5 rounded-lg font-bold text-xs">PT</div>
               <span className="font-bold text-base text-white tracking-wide">PulseTrade Access</span>
             </div>
-            <button onClick={onClose} className="text-slate-400 hover:text-white text-lg transition-colors cursor-pointer">
-              ✕
-            </button>
+            {!required && (
+              <button onClick={onClose} className="text-slate-400 hover:text-white text-lg transition-colors cursor-pointer">
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
