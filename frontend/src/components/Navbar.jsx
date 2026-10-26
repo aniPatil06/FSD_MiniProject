@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTrading } from '../context/TradingContext';
 
-export default function Navbar({ onSignOut }) {
+export default function Navbar({ onOpenAuth }) {
   const { balance, resetAccount, setCurrentPage, currentPage } = useTrading();
 
   return (
@@ -79,12 +79,12 @@ export default function Navbar({ onSignOut }) {
           Reset Demo Account
         </button>
 
-        {/* Sign-out Button */}
+        {/* Auth Modal Trigger Button */}
         <button 
-          onClick={onSignOut}
-          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
+          onClick={onOpenAuth}
+          className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-blue-600/30"
         >
-          Sign Out
+          Sign In / Register
         </button>
       </div>
 

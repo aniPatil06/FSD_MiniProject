@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Watchlist from './components/Watchlist';
 import ChartSection from './components/ChartSection';
@@ -9,32 +9,6 @@ import AuthModal from './components/AuthModal';
 import Chat from './components/Chat';
 import SystemStatus from './components/SystemStatus'; // Added SystemStatus Import
 import { useTrading } from './context/TradingContext';
-
-const AUTH_SESSION_KEY = 'pt_auth_session';
-
-function readAuthSession() {
-  const token = sessionStorage.getItem(AUTH_SESSION_KEY);
-  if (!token) return null;
-
-  try {
-    const payload = token.split('.')[1];
-    if (!payload) throw new Error('Invalid token');
-
-    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, '=');
-    const decodedPayload = JSON.parse(atob(paddedPayload));
-    const expiresAt = decodedPayload.exp * 1000;
-
-    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
-      throw new Error('Expired token');
-    }
-
-    return { token, expiresAt };
-  } catch {
-    sessionStorage.removeItem(AUTH_SESSION_KEY);
-    return null;
-  }
-}
 
 export default function App() {
   const { 
@@ -49,7 +23,7 @@ export default function App() {
     setPendingOrders 
   } = useTrading();
 
-  const [authSession, setAuthSession] = useState(readAuthSession);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const [timeframe, setTimeframe] = useState('5M');
   const [showSMA, setShowSMA] = useState(true);
@@ -60,27 +34,6 @@ export default function App() {
   const [orderType, setOrderType] = useState('BUY');
   const [executionType, setExecutionType] = useState('MARKET');
   const [targetPrice, setTargetPrice] = useState(0);
-
-  useEffect(() => {
-    if (!authSession) return undefined;
-
-    const timeout = setTimeout(() => {
-      sessionStorage.removeItem(AUTH_SESSION_KEY);
-      setAuthSession(null);
-    }, Math.max(0, authSession.expiresAt - Date.now()));
-
-    return () => clearTimeout(timeout);
-  }, [authSession]);
-
-  const handleLogin = (token) => {
-    sessionStorage.setItem(AUTH_SESSION_KEY, token);
-    setAuthSession(readAuthSession());
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem(AUTH_SESSION_KEY);
-    setAuthSession(null);
-  };
 
   const filteredStocks = stocks.filter(
     (s) =>
@@ -105,24 +58,20 @@ export default function App() {
     }
   };
 
-  if (!authSession) {
-    return (
-      <AuthModal
-        isOpen
-        required
-        onLogin={handleLogin}
-      />
-    );
-  }
-
   return (
     <div className="w-screen min-h-screen md:h-screen flex flex-col bg-slate-950 text-slate-100 font-sans overflow-x-hidden md:overflow-hidden">
       
-      {/* Navbar with sign-out action */}
-      <Navbar onSignOut={handleLogout} />
+      {/* Navbar with Auth Toggle Handler */}
+      <Navbar onOpenAuth={() => setIsAuthOpen(true)} />
 
       {/* CI/CD & Engine Status Banner */}
       <SystemStatus />
+
+      {/* Auth Modal Component */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
         
