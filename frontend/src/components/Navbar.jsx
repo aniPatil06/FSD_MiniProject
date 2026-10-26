@@ -15,7 +15,7 @@ export default function Navbar({ onOpenAuth }) {
         >
           <div className="bg-blue-600 text-white p-1.5 rounded-lg font-bold text-xs">PT</div>
           <span className="font-bold text-base text-slate-100 flex items-center gap-2">
-            PulseTrade <span className="text-blue-500 text-xs">PRO</span>
+            PulseTrade
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Live
