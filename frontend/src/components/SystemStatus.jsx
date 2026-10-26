@@ -11,13 +11,6 @@ export default function SystemStatus() {
         <span className="text-emerald-400 font-semibold font-sans">Trading Engine Active</span>
         <span className="text-slate-600">•</span>
       </div>
-      
-      <div className="flex items-center space-x-3">
-        <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] px-2 py-0.5 rounded font-semibold tracking-wider">
-          CI/CD AUTO-DEPLOYED
-        </span>
-        <span className="text-slate-500 text-[11px] hidden md:inline">v1.0.1</span>
-      </div>
     </div>
   );
 }
