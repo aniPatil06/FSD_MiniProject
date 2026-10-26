@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTrading } from '../context/TradingContext';
+import { API_BASE_URL } from '../config';
 
 export default function AuthModal({ isOpen, onClose }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,7 +18,7 @@ export default function AuthModal({ isOpen, onClose }) {
     const payload = isLogin ? { email, password } : { name, email, password };
 
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

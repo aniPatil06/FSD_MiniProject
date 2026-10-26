@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../config';
 
 export default function Chat() {
   const socketRef = useRef(null);
@@ -9,7 +10,7 @@ export default function Chat() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const socket = io('http://localhost:5000');
+    const socket = io(API_BASE_URL);
     socketRef.current = socket;
 
     socket.on('connect', () => setConnected(true));
