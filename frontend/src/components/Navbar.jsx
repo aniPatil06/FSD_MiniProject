@@ -14,8 +14,12 @@ export default function Navbar({ onOpenAuth }) {
           onClick={() => setCurrentPage('dashboard')}
         >
           <div className="bg-blue-600 text-white p-1.5 rounded-lg font-bold text-xs">PT</div>
-          <span className="font-bold text-base text-slate-100">
+          <span className="font-bold text-base text-slate-100 flex items-center gap-2">
             PulseTrade <span className="text-blue-500 text-xs">PRO</span>
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Live
+            </span>
           </span>
         </div>
 
@@ -44,7 +48,6 @@ export default function Navbar({ onOpenAuth }) {
           >
             Orders
           </button>
-          {/* Added Live Chat Navigation Tab */}
           <button 
             onClick={() => setCurrentPage('chat')}
             className={`px-3 py-1.5 rounded font-medium transition-colors ${
@@ -71,7 +74,7 @@ export default function Navbar({ onOpenAuth }) {
         <button
           onClick={resetAccount}
           title="Reset portfolio to initial cash"
-          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer border border-slate-700"
+          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer border border-slate-700 hidden md:block"
         >
           Reset Demo Account
         </button>

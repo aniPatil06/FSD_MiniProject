@@ -6,7 +6,8 @@ import OrderBook from './components/OrderBook';
 import OrderPanel from './components/OrderPanel';
 import Portfolio from './components/Portfolio';
 import AuthModal from './components/AuthModal';
-import Chat from './components/Chat'; // Added Chat Component Import
+import Chat from './components/Chat';
+import SystemStatus from './components/SystemStatus'; // Added SystemStatus Import
 import { useTrading } from './context/TradingContext';
 
 export default function App() {
@@ -63,6 +64,9 @@ export default function App() {
       {/* Navbar with Auth Toggle Handler */}
       <Navbar onOpenAuth={() => setIsAuthOpen(true)} />
 
+      {/* CI/CD & Engine Status Banner */}
+      <SystemStatus />
+
       {/* Auth Modal Component */}
       <AuthModal 
         isOpen={isAuthOpen} 
@@ -71,7 +75,7 @@ export default function App() {
 
       <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
         
-        {/* Watchlist Sidebar: Collapsible height on mobile, fixed width on tablet/desktop */}
+        {/* Watchlist Sidebar */}
         <div className="w-full md:w-64 lg:w-80 border-b md:border-b-0 md:border-r border-slate-800 shrink-0 max-h-60 md:max-h-none overflow-y-auto">
           <Watchlist 
             filteredStocks={filteredStocks} 
@@ -175,7 +179,6 @@ export default function App() {
             </main>
           )}
 
-          {/* Real-Time Chat View Route */}
           {currentPage === 'chat' && (
             <main className="flex-1 overflow-y-auto bg-slate-950">
               <Chat />
