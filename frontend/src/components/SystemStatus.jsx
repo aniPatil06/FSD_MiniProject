@@ -10,7 +10,6 @@ export default function SystemStatus() {
         </span>
         <span className="text-emerald-400 font-semibold font-sans">Trading Engine Active</span>
         <span className="text-slate-600">•</span>
-        <span className="text-slate-400 font-sans hidden sm:inline">Render API Connected</span>
       </div>
       
       <div className="flex items-center space-x-3">
